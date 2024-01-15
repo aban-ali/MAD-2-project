@@ -1,15 +1,16 @@
 let login={template: `
 <div class="app rounded-4 py-3" style="background-color: #9EDDFF">
     <h4 class="p-3">Please Login to continue</h4>
-    <form action="/login" method="post" class="px-5 pt-5 py-3 mb-0">
+    <form action="/dashboard" method="post" class="px-5 pt-5 py-3 mb-0" @submit="$root.get_token">
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">@</span>
-            <input required id="username" type="text" class="form-control" placeholder="Username">
+            <input required id="username" name="username" type="text" class="form-control" placeholder="Username">
         </div>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">Password</span>
-            <input required id="password" type="password" class="form-control" placeholder="Password">
+            <input required id="password" name="pass" type="password" class="form-control" placeholder="Password">
         </div>
+        <div v-if="$root.login_msg" class="text-danger">{{ $root.login_msg }}</div>
         <button class="btn btn-outline-primary btn-lg" >Login</button>
     </form>
     <p>Forgot <router-link to='/forgot-password'>username/password</router-link>?</p>
@@ -79,6 +80,7 @@ let forgot={template:`
 
 
 let router= new VueRouter({
+    mode:'history',
     routes:[
         {path :'/', component:login},
         {path :'/register', component:register},
@@ -91,6 +93,7 @@ let first_page = new Vue({
     el:'#app',
     data: {
         pwd :"",
+        login_msg:"",
         username:"",
         user_msg:"",
         is_disabled : true,
@@ -132,6 +135,37 @@ let first_page = new Vue({
                 document.getElementById("user_details").innerHTML=`Username: ${a.user_name}   <br> Password : ${a.password}`
             }catch(err){
                 document.getElementById("h_details").innerHTML="Please provide your correct Details"
+                document.getElementById("user_details").innerHTML=""
+            }
+        },
+        get_token: async function(event){
+            event.preventDefault();
+            const username=document.getElementById("username").value
+            const password=document.getElementById("password").value
+            let query=`{
+                user(user_name:"${username}"){
+                    id
+                    password   }
+                    }`
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query }),
+                };
+            let a =await abc(requestOptions)
+            try{
+                a= a.data.user[0]
+                if (a.password==password){
+                    const url="http://127.0.0.1:5000/token/"+a.id
+                    let token=await fetch(url).then(res=> res.json())
+                    .then(data=> data.token).catch(err=> console.log("token error:",err))
+                    localStorage.setItem('token',token);
+                    event.target.submit();
+                }
+            }catch(err){
+                this.login_msg="Either username or password is incorrect"
             }
         }
     },

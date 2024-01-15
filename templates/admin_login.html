@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .header{
+            background-color: #6499E9;
+            height: 120px;
+            text-align: center;
+            padding-top: 20px;
+            margin-bottom: 0;
+        }
+        .app{
+            margin-left: 20%;
+            margin-right: 20%;
+            margin-top: 50px;
+            text-align: center;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <title>Admin Login</title>
+</head>
+<body>
+    <div class="header">
+        <h1 style="color: #BEFFF7;">Mistborn</h1>
+        <h5 style="color: #BEFFF7;">An Extensive Library for Readers</h5>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router@3.0.0/dist/vue-router.js"></script>
+<script src="{{ url_for('static',filename='admin_login.js' ) }}"></script>
+</html>
