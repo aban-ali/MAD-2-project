@@ -1,0 +1,21 @@
+.head{
+    font-family: 'Brush Script MT', cursive;
+    color: #DFFFD8;
+    background-color: #F7C8E0;
+    padding: 5px;
+}
+.taskbar{
+    height: auto;
+    color: #DFFFD8;
+    background-color: #95BDFF;
+}
+.sidebar{
+    width: 20%;
+    position: fixed;
+    float: left;
+    height: 100%;
+    border-top-right-radius: 10%;
+    overflow: auto;
+    font-size: 20px;
+    background-color: #B4E4FF;
+}

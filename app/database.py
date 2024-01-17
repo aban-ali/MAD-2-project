@@ -10,6 +10,7 @@ class User(db.Model):
     email=db.Column(db.String, nullable=False, unique=True)
     role=db.Column(db.String, nullable=False)
     books_borrowed=db.Column(db.Integer)
+    is_active=db.Column(db.Boolean,nullable=False)
     is_premium=db.Column(db.Boolean)
     books=db.relationship("Book",backref="users",secondary="urb")
 

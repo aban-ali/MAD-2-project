@@ -1,16 +1,46 @@
-const header_temp=`
+export const header_temp={template:`
 <div>
-<style>
-        .head{
-            font-family: 'Brush Script MT', cursive;
-            color: #FDFFAB;
-            background-color: #FFB996;
-            padding: 5px;
-        }
-    </style>
     <div class="head text-center">
         <h1>MISTBORN</h1>
         <h4>An Extensive Library for Readers</h4>
     </div>
 </div>
-`
+`}
+
+export const taskbar={template:`
+<div>
+    <div class="taskbar">
+    <nav class="navbar sticky-top navbar-expand-lg bg-light">
+    <div class="container-fluid">
+      <button class="navbar-brand btn" v-on:click="$root.show_sidebar" style="font-family: 'Brush Script MT', cursive;">Mistborn</button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#head">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">My books</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Log out</a>
+          </li>
+        </ul>
+        <div class="d-flex" role="search">
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </div>
+      </div>
+    </div>
+    </nav>
+    </div>
+</div>
+`}
+
+
+export const side_bar={template:`
+<div>
+<div class="sidebar">
+    <div class="border text-center text-primary" style="background-color:#DFFFD8"> More Options </div>
+    </div>
+</div>
+`}
