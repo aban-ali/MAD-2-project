@@ -15,10 +15,6 @@ const user_dashboard=new Vue({
         <header-temp/>
         <task-bar/>
         <side-bar v-if="sidebar" />
-        hjkldfghjkljhfgyuewfbyrhefuijenghelbriugberiugbhelifljfljfhahfhasdfihfbuihfn<br>
-        fdsagfjhsdfkajsdhfkajsdbfkdsahfhhkdhfdksjahfksdalhfkasdfkahfklasdhfkajsdhfkalsdfkajsh<br><br>
-        <br><br><br>
-        fdsafasdfsdfsdhafladsbfkjdsahfkjhasdklfh
     </div>
     `,
     methods:{

@@ -1,6 +1,9 @@
 from flask import request, render_template, redirect, url_for, send_from_directory, jsonify
 from flask import current_app as app
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, current_user
+from datetime import date
+from os.path import join,exists
+from os import remove
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, current_user
 from .database import *
 from .graphql import *
 
@@ -43,7 +46,7 @@ def error_page():
 @jwt_required()
 def validate():
     try:
-        return jsonify({"active_status":current_user.is_active})
+        return jsonify({"active_status":current_user.is_active,"role":current_user.role})
     except:
         return jsonify({"active_status":False})
 
@@ -69,18 +72,28 @@ def admin_login():
             name=request.form["name"]
             email=request.form["email"]
             role="Admin"
-            admin=User(user_name=username,name=name,password=password,email=email,role=role,books_borrowed=0,is_premium=True)
+            admin=User(user_name=username,name=name,password=password,email=email,role=role,books_borrowed=0,is_active=False,is_premium=True)
             db.session.add(admin)
             db.session.commit()
         except:
             user=User.query.filter_by(user_name=username,role="Admin").first()
             if user and password==user.password:
-                pass
-
-
-            
+                return redirect(url_for("admin_dashboard"))
             return render_template("error.html")
     return render_template("admin_login.html")
+
+
+@app.route('/admin-dashboard')
+def admin_dashboard():
+    return render_template("admin_dashboard.html")
+
+@app.route('/add_book', methods=["POST"])
+def add_book():
+    name=request.form["book_name"]
+    book=Book.query.filter_by(name=name).first()
+    book_pdf=request.files["book_file"]
+    book_pdf.save(join("uploads",(book.id + ".pdf")))
+    return redirect(url_for("admin_dashboard"))
 
 
 #-------------------FLASK-JWT-EXTENDED CONFIGURATION-------------------------------------
