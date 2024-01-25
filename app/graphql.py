@@ -1,6 +1,8 @@
-from ariadne import ObjectType, gql, make_executable_schema,graphql_sync
-from .database import db,User,Genre,Urb,Review,Rtb,Book,Gtb
+from ariadne import ObjectType, gql, make_executable_schema,graphql_sync,ScalarType
+from .database import db,User,Genre,Urb,Review,Book,Gtb,Request
 from datetime import date
+from os.path import join,exists
+from os import remove
 
 type_defs = """
     type Query {
@@ -14,6 +16,10 @@ type_defs = """
         book(
             name:String
         ):[Books]
+        request(
+            u_id:Int!
+            b_id:Int!
+        ):Boolean
     }
     type User {
         id:Int
@@ -29,10 +35,12 @@ type_defs = """
         name:String
         count:Int
     }
+    scalar Date
     type Books{
         id:Int
         name:String
         description:String
+        release_date:Date
         borrow_count:Int
         hold_count:Int
         genre:[Genre]
@@ -40,7 +48,6 @@ type_defs = """
     }
     type Reviews{
         review:String
-        rating:Int
     }
     type Mutation{
         genre(name:String!):Boolean!
@@ -50,6 +57,10 @@ type_defs = """
             genre:[String]
             description:String
             ):Boolean!
+        user(
+            user_name:String!
+            is_premium:Boolean
+        ):Boolean!
         edit_book(
             id:String!
             name:String
@@ -63,9 +74,16 @@ type_defs = """
 book_type=ObjectType("Books")
 query = ObjectType("Query")
 mutation = ObjectType("Mutation")
+date_scalar = ScalarType("Date")
+
+
+@date_scalar.serializer
+def serialize_date(value):
+    return value.isoformat()
+
 
 book_type.field("genre")(lambda obj, info: obj.genre)
-book_type.field("reviews")(lambda obj, info: obj.reviews)
+book_type.field("reviews")(lambda obj, info: Review.query.filter_by(b_id=obj.id).all())
 
 
 #------------------------------------QUERY-----------------------------------------
@@ -94,8 +112,12 @@ def resolve_book(*_,name=None):
         result=Book.query.filter_by(name=name).first()
         return [result]
     else:
-        return Book.query.all()
+        return Book.query.order_by(Book.name).all()
 
+@query.field("request")
+def resolve_request(*_,u_id,b_id):
+    res=Request.query.filter_by(u_id=u_id,b_id=b_id).first()
+    return res.status
 
 #---------------------------------ADD and EDIT------------------------------------------
 @mutation.field("genre")
@@ -114,6 +136,7 @@ def add_book(*_,name,genre=None,description=""):
         new_book=Book(name=name,description=description,release_date=date.today(),borrow_count=0,hold_count=0)
         db.session.add(new_book)
         db.session.commit()
+        genre=list(genre[0].split(","))
         for gen in genre:
             b_gen=Gtb(b_id=new_book.id,g_id=Genre.query.filter_by(name=gen).first().id)
             db.session.add(b_gen)
@@ -140,6 +163,13 @@ def edit_book(*_,id,name=None,genre=None,description=None):
     except:
         return False
 
+@mutation.field("user")
+def edit_user(*_,is_premium,user_name):
+    if is_premium:
+        user=User.query.filter_by(user_name=user_name).first()
+        user.is_premium=True
+        db.session.commit()
+    return True
 #----------------------------------DELETE--------------------------------------------------
 
 @mutation.field("del_genre")
@@ -155,7 +185,25 @@ def del_genre(*_,name):
 
 @mutation.field("delete_book")
 def delete_book(*_,name):
-    pass
+    try:
+        book=Book.query.filter_by(name=name).first()
+        user_rel=Urb.query.filter_by(b_id=book.id).all()
+        gen_rel=Gtb.query.filter_by(b_id=book.id).all()
+        reviews=Review.query.filter_by(b_id=book.id).all()
+        for ele in user_rel:
+            db.session.delete(ele)
+        for ele in gen_rel:
+            db.session.delete(ele)
+        for ele in reviews:
+            db.session.delete(ele)
+        file=join("uploads",(str(book.id) + ".pdf"))
+        if exists(file):
+            remove(file)
+        db.session.delete(book)
+        db.session.commit()
+        return True
+    except:
+        return False
 
 @mutation.field("delete_user")
 def delete_user(*_,username):
@@ -172,6 +220,9 @@ def delete_user(*_,username):
         return True
     except:
         return False
+#-------------------------------------SEARCH------------------------------------------------
 
 
-schema = make_executable_schema(type_defs,[query,mutation,book_type])
+
+#-----------------------------------###---SCHEMA SETUP---###-----------------------------------
+schema = make_executable_schema(type_defs,[query,mutation,book_type,date_scalar])

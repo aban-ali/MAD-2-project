@@ -1,11 +1,10 @@
 from flask import request, render_template, redirect, url_for, send_from_directory, jsonify
 from flask import current_app as app
 from datetime import date
-from os.path import join,exists
-from os import remove
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, current_user
 from .database import *
 from .graphql import *
+import json
 
 jwt=JWTManager()
 
@@ -46,10 +45,19 @@ def error_page():
 @jwt_required()
 def validate():
     try:
-        return jsonify({"active_status":current_user.is_active,"role":current_user.role})
+        return jsonify({"active_status":current_user.is_active,"role":current_user.role,"username":current_user.user_name})
     except:
         return jsonify({"active_status":False})
 
+@app.route('/logout', methods=["POST"])
+@jwt_required()
+def logout():
+    try:
+        current_user.is_active=False
+        db.session.commit()
+        return jsonify({"is_active":current_user.is_active})
+    except:
+        return jsonify({"is_active":current_user.is_active})
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -89,12 +97,26 @@ def admin_dashboard():
 
 @app.route('/add_book', methods=["POST"])
 def add_book():
-    name=request.form["book_name"]
-    book=Book.query.filter_by(name=name).first()
-    book_pdf=request.files["book_file"]
-    book_pdf.save(join("uploads",(book.id + ".pdf")))
-    return redirect(url_for("admin_dashboard"))
+    try:
+        name=request.form["book_name"]
+        book=Book.query.filter_by(name=name).first()
+        book_pdf=request.files["book_file"]
+        book_pdf.save(join("uploads",(str(book.id) + ".pdf")))
+    finally:
+        return redirect(url_for("admin_dashboard"))
 
+@app.route("/admin/books")
+def admin_books_page():
+    return render_template("admin_books.html")
+
+@app.route("/admin/users")
+def admin_users_page():
+    return render_template("admin_users.html")
+
+@app.route("/book/<book_name>")
+def book(book_name):
+    data={"book_name":book_name}
+    return render_template("book.html",data=json.dumps(data))
 
 #-------------------FLASK-JWT-EXTENDED CONFIGURATION-------------------------------------
 @jwt.user_identity_loader

@@ -1,3 +1,4 @@
+//------------------------------Header--------------------------------------------------------
 export const header_temp={template:`
 <div>
     <div class="head text-center">
@@ -98,7 +99,7 @@ export const add_book={
       let index=this.selected_genre.indexOf(val);
       this.selected_genre.splice(index,1)
     },
-    submit_book: function(event){
+    submit_book:async function(event){
       event.preventDefault()
       let des=document.getElementById("description").value
       let query=`mutation{
@@ -112,7 +113,7 @@ export const add_book={
           body: JSON.stringify({ query: query }),
         };
         let apiUrl="http://127.0.0.1:5000/graphql";
-        fetch(apiUrl, requestOptions)
+        await fetch(apiUrl, requestOptions)
         .then(response => response.json())
         .then(data =>{
             console.log(data)
@@ -483,12 +484,12 @@ export const del_book={
   },
   template:`
   <div class="popup-form" v-if="$root.delete_book">
-    <div class="overlay" @click="$root.closeForm_edit"></div>
+    <div class="overlay" @click="$root.closeForm_delete"></div>
     <div class="content">
-      <span class="close-btn bg-danger rounded-3" @click="$root.closeForm_edit">&nbsp;&times;&nbsp;</span>
+      <span class="close-btn bg-danger rounded-3" @click="$root.closeForm_delete">&nbsp;&times;&nbsp;</span>
       <h2>Delete a Book</h2>
         <div class=" ms-2 input-group mb-1">
-          <label class="input-group-text" for="inputGroupSelect01">Genre</label>
+          <label class="input-group-text" for="inputGroupSelect01">Book Name</label>
           <select v-model="book_name" class="form-select" id="inputGroupSelect01">
             <option selected>Choose...</option>
             <option v-for="book in this.books">{{book}}</option>
@@ -505,7 +506,7 @@ export const del_book={
         <hr>
       <h2>Delete a User</h2>
         <div class=" ms-2 input-group mb-1">
-          <label class="input-group-text" for="inputGroupSelect01">Genre</label>
+          <label class="input-group-text" for="inputGroupSelect01">User Name</label>
           <select v-model="user_name" class="form-select" id="inputGroupSelect01">
             <option selected>Choose...</option>
             <option v-for="user in this.users">{{user.name}}&emsp;&emsp;&emsp;~{{user.username}}</option>
@@ -524,7 +525,27 @@ export const del_book={
   `,
   methods:{
     delete_book:function(){
-      
+      let query=`mutation{
+        delete_book(name:"${this.book_name}")
+      }`
+      const requestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: query }),
+        };
+      let apiUrl="http://127.0.0.1:5000/graphql";
+      fetch(apiUrl, requestOptions)
+      .then(response => response.json())
+      .then(data =>{
+          console.log(data)
+          this.check_book=false
+          //location.reload()
+      })
+      .catch(error => {
+          console.error('GraphQL Error:', error);
+      });
     },
     delete_user:function(){
       let start=this.user_name.indexOf("~")+1
@@ -585,4 +606,123 @@ export const del_book={
         console.error('GraphQL Error:', error);
     });
   }
+}
+
+//------------------------------BOOK'S PAGE BODY----------------------------------------------
+export const books_body={
+  data(){
+      return{
+          books:[],
+          last_sort:"Name"
+      }
+  },
+  template:`
+  <div>
+      <div class=" float-end input-group mt-3 me-4" style="width:30%;">
+          <select class="form-select" id="sort_type">
+              <option selected>Name</option>
+              <option>Latest</option>
+              <option>Most Read</option>
+              <option>Most Rated</option>
+          </select>
+          <button @click="sort" class="btn btn-outline-secondary" type="button">Sort By</button>
+      </div>
+      <br>
+      <br>
+      <ul class="list-group m-3 list-group-horizontal-xxl">
+          <li class="list-group-item rounded-2 pb-0 m-2 row">
+            <p class="d-inline float-start col-1 h5">Index</p>
+            <p class="d-inline float-start col-3 h5">Book Name </p>
+            <p class="d-inline float-end h5 col-2">Release Date</p>
+            <p class="d-inline float-end h5 col-5">Genre</p>
+          </li>
+          
+          <li @click="go_to(book.name)" v-for="(book,index) in books" class="list-group-item btn rounded-2 pb-0 m-2 row">
+            <p class="d-inline float-start col-1">{{index+1}}</p>
+            <p class="d-inline ms-5 float-start col-1">{{book.name}}</p>
+            <p class="d-inline float-end col-3">{{book.release_date}}</p>
+            <p class="d-inline float-end col-5"><span class="me-2" v-for="gen in book.genre">{{gen.name}}</span></p> 
+          </li>
+      </ul>
+  </div>`,
+  methods:{
+      sort:function(){
+          let sort_type=document.getElementById("sort_type").value
+          if(sort_type=="Name"){
+            if(this.last_sort==sort_type){
+                this.books=this.books.slice().sort((a,b)=>b.name.localeCompare(a.name))
+                this.last_sort=""
+            }
+            else{
+              this.books=this.books.slice().sort((a,b)=>a.name.localeCompare(b.name))
+              this.last_sort=sort_type
+            }
+          }
+          else if(sort_type=="Latest"){
+            if(this.last_sort==sort_type){
+              this.books=this.books.slice().sort((a,b)=>b.release_date.localeCompare(a.release_date))
+              this.last_sort=""
+          }
+          else{
+            this.books=this.books.slice().sort((a,b)=>a.release_date.localeCompare(b.release_date))
+            this.last_sort=sort_type
+          }
+          }else if(sort_type=="Most Read"){
+            if(this.last_sort==sort_type){
+              this.books=this.books.slice().sort((a,b)=>b.borrow_count.localeCompare(a.borrow_count))
+              this.last_sort=""
+          }
+          else{
+            this.books=this.books.slice().sort((a,b)=>a.borrow_count.localeCompare(b.borrow_count))
+            this.last_sort=sort_type
+          }
+          }else if(sort_type=="Most Rated"){
+            if(this.last_sort==sort_type){
+              this.books=this.books.slice().sort((a,b)=>b.borrow_count.localeCompare(a.borrow_count))
+              this.last_sort=""
+          }
+          else{
+            this.books=this.books.slice().sort((a,b)=>a.borrow_count.localeCompare(b.borrow_count))
+            this.last_sort=sort_type
+          }
+          }
+      },
+      go_to:function(name){
+        window.location.href="/book/"+name;
+      }
+  },
+  mounted:function(){
+      let query=`{
+          book{
+              id,
+              name,
+              description,
+              release_date,
+              borrow_count,
+              hold_count,
+              genre{
+                  name
+              }
+          }
+        }`
+        const requestOption = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query }),
+          };
+      fetch('http://127.0.0.1:5000/graphql',requestOption).then(res=>res.json())
+      .then(data=>{
+          let res=data.data.book;
+          this.books=res;
+      }).catch(err=>console.log("Graphql Error : ",err))
+  }
+}
+//-------------------------------FOOTER--------------------------------------------
+export const foot={
+  template:`
+  <div class="stickey-bottom bg-dark text-light p-3">
+    Click here to view Company's Policy Guidline
+  </div>`
 }

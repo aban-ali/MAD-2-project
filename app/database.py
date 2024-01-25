@@ -9,25 +9,27 @@ class User(db.Model):
     password=db.Column(db.String)
     email=db.Column(db.String, nullable=False, unique=True)
     role=db.Column(db.String, nullable=False)
-    books_borrowed=db.Column(db.Integer)
+    books_borrowed=db.Column(db.Integer)    #Total books borrowed by user to determine if he is  an avid reader
     is_active=db.Column(db.Boolean,nullable=False)
-    is_premium=db.Column(db.Boolean)
+    is_premium=db.Column(db.Boolean) #Make user elegible to download a book
     books=db.relationship("Book",backref="users",secondary="urb")
 
-class Urb(db.Model):
+class Request(db.Model):
+    id=db.Column(db.Integer,primary_key=True)
+    u_id=db.Column(db.Integer,db.ForeignKey("user.id"))
+    b_id=db.Column(db.Integer,db.ForeignKey("book.id"))
+    status=db.Column(db.Boolean)
+
+class Urb(db.Model):  # User and Books relationship table
     s_no=db.Column(db.Integer, primary_key=True)
     u_id=db.Column(db.Integer, db.ForeignKey("user.id"))
     b_id=db.Column(db.Integer, db.ForeignKey("book.id"))
 
 class Review(db.Model):
     id=db.Column(db.Integer, primary_key=True)
-    review=db.Column(db.String, nullable=False)
-    rating=db.Column(db.Integer)
-
-class Rtb(db.Model):
-    s_no=db.Column(db.Integer, primary_key=True)
+    u_id=db.Column(db.Integer, db.ForeignKey("user.id"))
     b_id=db.Column(db.Integer, db.ForeignKey("book.id"))
-    g_id=db.Column(db.Integer, db.ForeignKey("review.id"))
+    review=db.Column(db.String, nullable=False)
 
 
 class Book(db.Model):
@@ -37,10 +39,10 @@ class Book(db.Model):
     release_date=db.Column(db.Date)
     borrow_count=db.Column(db.Integer)
     hold_count=db.Column(db.Integer)
+    upvotes=db.Column(db.Integer)
     genre=db.relationship("Genre",backref="books", secondary="gtb")
-    reviews=db.relationship("Review", secondary="rtb")
 
-class Gtb(db.Model):
+class Gtb(db.Model): #Genre and Books relationship table
     s_id=db.Column(db.Integer, primary_key=True)
     b_id=db.Column(db.Integer, db.ForeignKey("book.id"))
     g_id=db.Column(db.Integer, db.ForeignKey("genre.id"))

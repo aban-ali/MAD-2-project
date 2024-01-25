@@ -1,5 +1,4 @@
-import { header_temp } from "./components.js";
-import { add_book, add_genre, edit_book,del_book } from "./components.js";
+import { header_temp,add_book, add_genre, edit_book,del_book } from "./components.js";
 
 Vue.component("header-temp",header_temp)
 Vue.component("add-book",add_book)
@@ -10,22 +9,18 @@ const taskbar={template:`
 <div>
     <nav class="navbar navbar-expand-lg bg-light">
         <div class="container-fluid">
-            <button class="navbar-brand btn" style="font-family: 'Brush Script MT', cursive;">Mistborn</button>
+            <span class="navbar-brand" style="font-family: 'Brush Script MT', cursive;">Mistborn</span>
             <div class="collapse text-center navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#head">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">My books</a>
+                    <a class="nav-link disabled" aria-current="page" href="#head">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#">Log out</a>
                 </li>
                 </ul>
-                <div class="d-flex" role="search">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-success" type="submit">Search</button>
+                <div class="d-flex">
+                    <span class="p-2 rounded-4 text-warning border border-warning">Premium Member</span>
                 </div>
             </div>
         </div>
@@ -56,13 +51,69 @@ const operations={template:`
     </div>
 </div>`}
 
+const go_to_books={
+    template:`
+    <div @click="admin_books_page" class="btn border border-1 my-3 border-success text-center rounded-2 btn-outline-success" style="width:90%;margin-left:5%">
+        <h5 class="text-decoration-underline">Books</h5>
+        <div class="row text-muted">
+            <div class="col-6">
+                <ul>Stats</ul>
+                <li>Most viewed books</li>
+                <li>Most viewed genre</li>
+                <li>Most rated books</li>
+                <ul>And more ...</ul>
+            </div>
+            <div class="col-6 text-muted">
+                <ul>About Books</ul>
+                <li>Most viewed books</li>
+                <li>Most viewed genre</li>
+                <li>Most rated books</li>
+                <ul>And more ...</ul>
+            </div>
+        </div>
+    </div>`,
+    methods:{
+        admin_books_page:function(){
+            window.location.href='/admin/books';
+        }
+    }
+}
+
+const go_to_users={
+    template:`
+    <div @click="admin_users_page" class="btn border border-1 my-3 border-success text-center rounded-2 btn-outline-success" style="width:90%;margin-left:5%">
+        <h5 class="text-decoration-underline">Users</h5>
+        <div class="row text-muted">
+            <div class="col-6">
+                <ul>Stats</ul>
+                <li>Most avid reader</li>
+                <li>Most viewed genre</li>
+                <li>Most rated books</li>
+                <ul>And more ...</ul>
+            </div>
+            <div class="col-6 text-muted">
+                <ul>About User</ul>
+                <li>List of all Users</li>
+                <li>Type of User</li>
+                <li>Most rated books</li>
+                <ul>And more ...</ul>
+            </div>
+        </div>
+    </div>`,
+    methods:{
+        admin_users_page:function(){
+            window.location.href='/admin/users';
+        }
+    }
+}
+
 const admin_dash=new Vue({
     el:"#app",
     data:{
         add_book:false,
         add_genre:false,
         edit_book:false,
-        delete_book:true
+        delete_book:false
     },
     template:`
     <div>
@@ -73,10 +124,14 @@ const admin_dash=new Vue({
         <add-genre/>
         <edit-book/>
         <delete-book/>
+        <go-to-books/>
+        <go-to-users/>
     </div>`,
     components:{
         "taskbar":taskbar,
-        "operations":operations
+        "operations":operations,
+        "go-to-books":go_to_books,
+        "go-to-users":go_to_users
     },
     methods:{
         add_books: function(){
