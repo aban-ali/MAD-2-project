@@ -1,4 +1,4 @@
-import { header_temp,add_book, add_genre, edit_book,del_book } from "./components.js";
+import { header_temp,add_book, add_genre, edit_book,del_book,foot } from "./components.js";
 
 Vue.component("header-temp",header_temp)
 Vue.component("add-book",add_book)
@@ -126,12 +126,14 @@ const admin_dash=new Vue({
         <delete-book/>
         <go-to-books/>
         <go-to-users/>
+        <foot-er/>
     </div>`,
     components:{
         "taskbar":taskbar,
         "operations":operations,
         "go-to-books":go_to_books,
-        "go-to-users":go_to_users
+        "go-to-users":go_to_users,
+        "foot-er":foot
     },
     methods:{
         add_books: function(){

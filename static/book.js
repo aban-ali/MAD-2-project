@@ -14,7 +14,7 @@ const book_taskbar={
                 <div class="collapse text-center navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="/admin-dashboard">Home</a>
+                        <span @click="home" class="btn nav-link">Home</span>
                     </li>
                     <li class="nav-item">
                         <span @click="logout" class="nav-link btn">Log out</span>
@@ -37,9 +37,9 @@ const book_taskbar={
             <span class="close-btn bg-danger rounded-3" @click="this.closeForm_member">&nbsp;&times;&nbsp;</span>
             <h2>Premium Subscription</h2>
                 <ul>Benifits For Premium Members
-                    <li class="ms-4">Download any book you want</li>
                     <li class="ms-4">Read in an ad-free environment</li>
                     <li class="ms-4">Can hold upto 7 books</li>
+                    <li class="ms-4">Lorem ipsum dolor sit amet</li>
                 </ul>
                 <div>So why wait!! Become a member for $1 million now!</div>
                 <div class="d-grid gap-2 my-3">
@@ -48,7 +48,20 @@ const book_taskbar={
             </div>
         </div>
     </div>`,
+    computed:{
+        url:function(){
+            console.log(book)
+            
+        }
+    },
     methods:{
+        home:function(){
+            if(book.user.role=="Admin"){
+                window.location.href="/admin-dashboard";
+            }else{
+                window.location.href="/dashboard";
+            }
+        },
         logout:function(){
             const requestOptions = {
                 method: 'POST',
@@ -87,28 +100,109 @@ const book_taskbar={
     }
 }
 
-
 const body={
+    data(){
+        return{
+            read_permission:false
+        }
+    },
 template:`
 <div>
-    <div class="text-center p-3" style="background-color:#FFCF81">
+    <div class="text-center p-3" style="background-color:#FFCF81;">
         <h4>{{$root.book_name}}</h4>
+        <embed v-if="read_permission" :src="url" type="application/pdf" width="80%" height="600px">
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <button v-if="$root.user.role!='Admin'" class="btn btn-info" @click="read_book"><span v-if="$root.err">Request Access for 1 week</span>
+            <span v-else-if="!$root.status">Request Pending</span><span v-else>Read Book</span></button>
+            <button class="btn btn-info" @click="read_permission=!read_permission">Read Book</button>
+        </div>
     </div>
-    <div class="p-2" style="background-color:#FDFFAB">
+    <p class="m-0" style="filter: blur(3px);background-color:#FFCF81;">.</p>
+    <p class="m-0" style="filter: blur(3px);background-color:#FDFFAB;">.</p>
+    <div class="p-2 mt-0" style="background-color:#FDFFAB">
         <h4 class=" text-center">Book Details</h4>
         <p><h5 class="d-inline">Book Description:</h5><span v-if="$root.book.description" class="ps-2">{{$root.book.description}}</span>
             <span v-else class="ps-2">No Description of book is present</span>
         </p>
         <p><h5 class="d-inline">Release Date:</h5><span class="ps-4">{{$root.book.release_date}}</span></p>
         <p><h5 class="d-inline">Genre:</h5><span v-if="$root.book.genre[0]" class="ps-4">
-            <span v-for="gen in $root.book.genre" class="px-3">{{ gen.name }}</span>
+            <span v-for="gen in $root.book.genre" class="px-3">{{ gen.name }}</span></span>
             <span v-else> Unknown </span>
-        </span></p>    
+        </p>    
     </div>
+    <p class="m-0" style="filter: blur(3px);background-color:#FDFFAB;">.</p>
+    <p class="m-0" style="filter: blur(3px);background-color:#D9EDBF;">.</p>
     <div class="p-2" style="background-color:#D9EDBF">
-        Please drop Your Review
+        <h4 class="text-center"> Please drop Your Review</h4>
+        <div class="input-group" style="width:80%; margin:auto;">
+            <span class="input-group-text">Review</span>
+            <textarea class="form-control" id="review"></textarea>
+            <button @click="submit_review" class="btn btn-outline-secondary">Submit</button>
+        </div>
     </div>
-</div>`
+    <hr class="border border-5 m-0 py-0 px-2 border-secondary">
+    <div class="py-3" style="background-color:#D9EDBF">
+    <div v-for="rev in $root.reviews" class="my-0 p-2 mx-3 border rounded-3 border-info"  style="background-color:#cde9a7">
+        <p class="px-1 text-success">Review by: {{ rev.user.name }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;Username ~{{rev.user.user_name}}</p>
+        <p class="px-4 text-center">{{rev.review}}</p>
+    </div></div>
+</div>`,
+computed:{
+    url:function(){
+        return "http://127.0.0.1:5000/pdf/"+book.book.id+".pdf"
+    }
+},
+methods:{
+    submit_review:function(){
+        let review=document.getElementById("review").value
+        let query=`mutation{
+            add_review(
+                u_id:${book.user.id},
+                b_id:${book.book.id},
+                review:"${review}"
+            )
+            }`
+          const requestOption = {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ query: query }),
+            };
+          let apiUrl="http://127.0.0.1:5000/graphql";
+          fetch(apiUrl, requestOption)
+          .then(response => response.json())
+          .then(data =>{
+              console.log(data)
+          })
+          .catch(error => {
+              console.error('GraphQL Error:', error);
+          });
+          location.reload();
+    },
+    read_book:function(){
+        if(book.err){
+            let query=`mutation{
+                request(
+                    u_id:${book.user.id},
+                    b_id:${book.book.id})
+                }`
+              const requestOption = {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ query: query }),
+                };
+              let apiUrl="http://127.0.0.1:5000/graphql";
+              fetch(apiUrl, requestOption).catch(err=>console.log(err))
+        } else if(book.status){
+            this.book_id=book.book.id;
+        }
+        location.reload()
+    }
+    },
 }
 
 const book=new Vue({
@@ -116,7 +210,11 @@ const book=new Vue({
     data:{
         book_name:"",
         user:[],
-        book:[]
+        book:[],
+        reviews:[],
+        status:false,
+        deadline:"",
+        err:false
     },
     template:`
     <div>
@@ -148,17 +246,26 @@ const book=new Vue({
         } username=data.username
         }).catch(err=> console.log(err));
         let query=`{
-            user{
+            user(user_name:"${username}"){
+              id,
               name,
               user_name,
               role,
               is_premium
             }
             book(name:"${this.book_name}"){
+                id,
                 description,
                 release_date,
                 genre{
                     name
+                },
+                reviews{
+                    review,
+                    user{
+                        name,
+                        user_name
+                    }
                 }
             }
           }`
@@ -170,15 +277,41 @@ const book=new Vue({
               body: JSON.stringify({ query: query }),
             };
           let apiUrl="http://127.0.0.1:5000/graphql";
-          fetch(apiUrl, requestOption)
+          await fetch(apiUrl, requestOption)
           .then(response => response.json())
           .then(data =>{
               this.user=data.data.user[0];
               this.book=data.data.book[0];
-              console.log(data.data)
+              this.reviews=data.data.book[0].reviews
           })
           .catch(error => {
               console.error('GraphQL Error:', error);
+          });
+
+          let q=`{
+            request(
+                u_id:${this.user.id},
+                b_id:${this.book.id}){
+                    status,
+                    deadline
+                }
+            }`
+          const req = {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ query: q }),
+            };
+          //let apiUrl="http://127.0.0.1:5000/graphql";
+          fetch(apiUrl, req)
+          .then(response => response.json())
+          .then(data =>{
+              this.status=data.data.request[0].status;
+              this.deadline=data.data.request[0].deadline;
+          })
+          .catch(error => {
+              this.err=true;
           });
     }
 })

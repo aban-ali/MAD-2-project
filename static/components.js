@@ -8,45 +8,6 @@ export const header_temp={template:`
 </div>
 `}
 
-//----------------------------------TASKBAR---------------------------------------------------
-export const taskbar={template:`
-<div>
-    <div class="taskbar">
-    <nav class="navbar sticky-top navbar-expand-lg bg-light">
-    <div class="container-fluid">
-      <button class="navbar-brand btn" v-on:click="$root.show_sidebar" style="font-family: 'Brush Script MT', cursive;">Mistborn</button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#head">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">My books</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Log out</a>
-          </li>
-        </ul>
-        <div class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
-        </div>
-      </div>
-    </div>
-    </nav>
-    </div>
-</div>
-`}
-
-//------------------------SIDE-BAR--------------------------------------------------------------
-export const side_bar={template:`
-<div>
-<div class="sidebar">
-    <div class="border text-center text-primary" style="background-color:#DFFFD8"> More Options </div>
-    </div>
-</div>
-`}
-
 //---------------------------ADD_BOOK-------------------------------------------------------
 export const add_book={
   data(){
@@ -150,8 +111,7 @@ export const add_book={
         .then(response => response.json())
         .then(data =>{
           let b_name=data.data.book[0].name
-            document.getElementById("book_msg").innerHTML="Book with name "+b_name+" alreay exists"
-        })
+            if(this.book_name.length>0){document.getElementById("book_msg").innerHTML="Book with name "+b_name+" alreay exists"}        })
         .catch(error => {
             document.getElementById("book_msg").innerHTML=""
         });
@@ -539,9 +499,7 @@ export const del_book={
       fetch(apiUrl, requestOptions)
       .then(response => response.json())
       .then(data =>{
-          console.log(data)
           this.check_book=false
-          //location.reload()
       })
       .catch(error => {
           console.error('GraphQL Error:', error);
@@ -623,7 +581,6 @@ export const books_body={
               <option selected>Name</option>
               <option>Latest</option>
               <option>Most Read</option>
-              <option>Most Rated</option>
           </select>
           <button @click="sort" class="btn btn-outline-secondary" type="button">Sort By</button>
       </div>
@@ -641,7 +598,11 @@ export const books_body={
             <p class="d-inline float-start col-1">{{index+1}}</p>
             <p class="d-inline ms-5 float-start col-1">{{book.name}}</p>
             <p class="d-inline float-end col-3">{{book.release_date}}</p>
-            <p class="d-inline float-end col-5"><span class="me-2" v-for="gen in book.genre">{{gen.name}}</span></p> 
+            <p class="d-inline float-end col-5"><span class="me-0" v-for="gen in book.genre">| {{gen.name}} |</span></p>
+            <div v-if="$root.role=='Admin'" class="text-start"><br><br><br>
+              User who have access to this book : <span  v-if="book.users[0]"><span v-for="user in book.users" class="btn">{{user.name}} &nbps;&nbps; ~{{user.user_name}}</span></span>
+              <span v-else class="text-danger">No one is currently reading this book</span>
+            </div> 
           </li>
       </ul>
   </div>`,
@@ -676,15 +637,6 @@ export const books_body={
             this.books=this.books.slice().sort((a,b)=>a.borrow_count.localeCompare(b.borrow_count))
             this.last_sort=sort_type
           }
-          }else if(sort_type=="Most Rated"){
-            if(this.last_sort==sort_type){
-              this.books=this.books.slice().sort((a,b)=>b.borrow_count.localeCompare(a.borrow_count))
-              this.last_sort=""
-          }
-          else{
-            this.books=this.books.slice().sort((a,b)=>a.borrow_count.localeCompare(b.borrow_count))
-            this.last_sort=sort_type
-          }
           }
       },
       go_to:function(name){
@@ -700,6 +652,10 @@ export const books_body={
               release_date,
               borrow_count,
               hold_count,
+              users{
+                name,
+                user_name
+              },
               genre{
                   name
               }
@@ -722,7 +678,30 @@ export const books_body={
 //-------------------------------FOOTER--------------------------------------------
 export const foot={
   template:`
-  <div class="stickey-bottom bg-dark text-light p-3">
+  <div class="stickey-bottom bg-dark text-light p-3 pb-4">
+  <br>
     Click here to view Company's Policy Guidline
+    <br>
+
+    <div class="my-4 row">
+      <div class="col-4">
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+      </div>
+      <div class="col-4">
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+      </div>
+      <div class="col-4">
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+        <li>Lorem ipsum dolor sit amet</li>
+      </div>
+    </div>
+    <div class="float-end text-warning">
+      Made by- Mohammad Aban Ali
+    </div>
   </div>`
 }

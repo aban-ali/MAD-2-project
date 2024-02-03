@@ -1,10 +1,11 @@
 from ariadne import ObjectType, gql, make_executable_schema,graphql_sync,ScalarType
 from .database import db,User,Genre,Urb,Review,Book,Gtb,Request
-from datetime import date
+from datetime import date, timedelta
 from os.path import join,exists
 from os import remove
 
 type_defs = """
+    scalar Date
     type Query {
         user(
             user_name: String
@@ -17,9 +18,9 @@ type_defs = """
             name:String
         ):[Books]
         request(
-            u_id:Int!
-            b_id:Int!
-        ):Boolean
+            u_id:Int
+            b_id:Int
+        ):[Request]
     }
     type User {
         id:Int
@@ -28,14 +29,23 @@ type_defs = """
         role:String
         email:String
         password:String
+        is_active:Boolean
+        books_borrowed:Int
         is_premium:Boolean
+        books:[Books]
+        requests:[Request]
+    }
+    type Request{
+        status:Boolean
+        deadline:Date
+        book:Books
+        user:User
     }
     type Genre{
         id:Int
         name:String
         count:Int
     }
-    scalar Date
     type Books{
         id:Int
         name:String
@@ -43,11 +53,13 @@ type_defs = """
         release_date:Date
         borrow_count:Int
         hold_count:Int
+        users:[User]
         genre:[Genre]
         reviews:[Reviews]
     }
     type Reviews{
         review:String
+        user:User
     }
     type Mutation{
         genre(name:String!):Boolean!
@@ -69,12 +81,25 @@ type_defs = """
             ):Boolean!
         delete_book(name:String!):Boolean!
         delete_user(username:String!):Boolean!
+        add_review(
+            u_id:Int!
+            b_id:Int!
+            review:String!
+            ):Boolean!
+        request(
+            u_id:Int!
+            b_id:Int!
+            status:Boolean
+            ):Boolean!
     }
 """
 book_type=ObjectType("Books")
+user_type=ObjectType("User")
+review_type=ObjectType("Reviews")
 query = ObjectType("Query")
 mutation = ObjectType("Mutation")
 date_scalar = ScalarType("Date")
+request_type=ObjectType("Request")
 
 
 @date_scalar.serializer
@@ -83,8 +108,13 @@ def serialize_date(value):
 
 
 book_type.field("genre")(lambda obj, info: obj.genre)
+book_type.field("users")(lambda obj, info: obj.users)
 book_type.field("reviews")(lambda obj, info: Review.query.filter_by(b_id=obj.id).all())
-
+review_type.field("user")(lambda obj,info: User.query.filter_by(id=obj.u_id).first())
+user_type.field("books")(lambda obj,info:obj.books)
+user_type.field("requests")(lambda obj,info: Request.query.filter_by(u_id=obj.id).all())
+request_type.field("book")(lambda obj, info: Book.query.filter_by(id=obj.b_id).first())
+request_type.field("user")(lambda obj, info: User.query.filter_by(id=obj.u_id).first())
 
 #------------------------------------QUERY-----------------------------------------
 @query.field("user")
@@ -98,7 +128,8 @@ def resolve_user(_, info, user_name=None,name=None,role=None,email=None):
     elif email:
         res=User.query.filter_by(email=email).all()
     else:
-        res=User.query.all()
+        res=User.query.filter_by(role="Faculty").all() + User.query.filter_by(role="Student").all()
+
     return res
 
 @query.field("genres")
@@ -115,9 +146,14 @@ def resolve_book(*_,name=None):
         return Book.query.order_by(Book.name).all()
 
 @query.field("request")
-def resolve_request(*_,u_id,b_id):
-    res=Request.query.filter_by(u_id=u_id,b_id=b_id).first()
-    return res.status
+def resolve_request(*_,u_id=None,b_id=None):
+    if b_id:    
+        res=list(Request.query.filter_by(u_id=u_id,b_id=b_id).first())
+    elif u_id:
+        res=Request.query.filter_by(u_id=u_id).all()
+    else:
+        res=Request.query.filter_by(status=False).all()
+    return res
 
 #---------------------------------ADD and EDIT------------------------------------------
 @mutation.field("genre")
@@ -145,6 +181,17 @@ def add_book(*_,name,genre=None,description=""):
     except:
         return False
 
+@mutation.field("add_review")
+def add_review(*_,u_id,b_id,review):
+    rev=Review.query.filter_by(u_id=u_id,b_id=b_id).first()
+    if rev:
+        rev.review=review
+    else:
+        new_rev=Review(u_id=u_id,b_id=b_id,review=review)
+        db.session.add(new_rev)
+    db.session.commit()
+    return True
+
 @mutation.field("edit_book")
 def edit_book(*_,id,name=None,genre=None,description=None):
     try:
@@ -168,6 +215,24 @@ def edit_user(*_,is_premium,user_name):
     if is_premium:
         user=User.query.filter_by(user_name=user_name).first()
         user.is_premium=True
+        db.session.commit()
+    return True
+
+
+@mutation.field("request")
+def request_book(*_,u_id,b_id,status=None):
+    request=Request.query.filter_by(u_id=u_id,b_id=b_id).first()
+    if status:
+        request.status=True
+        request.deadline=date.today()+timedelta(days=7)
+        db.session.commit()
+    else:
+        if request:
+            db.session.delete(request)
+            db.session.commit()
+            return False
+        request=Request(u_id=u_id,b_id=b_id,status=False,deadline=date.today())
+        db.session.add(request)
         db.session.commit()
     return True
 #----------------------------------DELETE--------------------------------------------------
@@ -225,4 +290,4 @@ def delete_user(*_,username):
 
 
 #-----------------------------------###---SCHEMA SETUP---###-----------------------------------
-schema = make_executable_schema(type_defs,[query,mutation,book_type,date_scalar])
+schema = make_executable_schema(type_defs,[query,mutation,book_type,date_scalar,review_type,user_type,request_type])

@@ -11,14 +11,15 @@ class User(db.Model):
     role=db.Column(db.String, nullable=False)
     books_borrowed=db.Column(db.Integer)    #Total books borrowed by user to determine if he is  an avid reader
     is_active=db.Column(db.Boolean,nullable=False)
-    is_premium=db.Column(db.Boolean) #Make user elegible to download a book
+    is_premium=db.Column(db.Boolean) #Make user elegible to borrow upto 10 books
     books=db.relationship("Book",backref="users",secondary="urb")
 
 class Request(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     u_id=db.Column(db.Integer,db.ForeignKey("user.id"))
     b_id=db.Column(db.Integer,db.ForeignKey("book.id"))
-    status=db.Column(db.Boolean)
+    status=db.Column(db.Boolean,nullable=False)
+    deadline=db.Column(db.Date)
 
 class Urb(db.Model):  # User and Books relationship table
     s_no=db.Column(db.Integer, primary_key=True)
@@ -39,7 +40,6 @@ class Book(db.Model):
     release_date=db.Column(db.Date)
     borrow_count=db.Column(db.Integer)
     hold_count=db.Column(db.Integer)
-    upvotes=db.Column(db.Integer)
     genre=db.relationship("Genre",backref="books", secondary="gtb")
 
 class Gtb(db.Model): #Genre and Books relationship table

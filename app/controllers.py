@@ -1,5 +1,5 @@
 from flask import request, render_template, redirect, url_for, send_from_directory, jsonify
-from flask import current_app as app
+from flask import current_app as app,send_from_directory
 from datetime import date
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, current_user
 from .database import *
@@ -105,9 +105,13 @@ def add_book():
     finally:
         return redirect(url_for("admin_dashboard"))
 
-@app.route("/admin/books")
-def admin_books_page():
-    return render_template("admin_books.html")
+@app.route('/pdf/<filename>')
+def get_pdf(filename):
+    return send_from_directory("uploads", filename)
+
+@app.route("/<user>/books")
+def admin_books_page(user):
+    return render_template("list_books.html")
 
 @app.route("/admin/users")
 def admin_users_page():
@@ -117,6 +121,10 @@ def admin_users_page():
 def book(book_name):
     data={"book_name":book_name}
     return render_template("book.html",data=json.dumps(data))
+
+@app.get("/image/<file>")
+def get_image(file):
+    return send_from_directory('static/images',file+".jpg")
 
 #-------------------FLASK-JWT-EXTENDED CONFIGURATION-------------------------------------
 @jwt.user_identity_loader
