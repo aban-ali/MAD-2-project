@@ -103,8 +103,8 @@ const users_details={
                     </p>
                     <p class="col-4">
                         <ul>
-                            <li><span class="text-success">Books Read : </span> {{user.books_borrowed}}</li>
-                            <li><span class="text-success">Books on hold : </span> {{user.books.length}}</li>
+                            <li><span class="text-success">Books held times : </span> {{user.books_borrowed}}</li>
+                            <li><span class="text-success">Books hold : </span> {{user.books.length}}</li>
                             <li><span class="text-success">Book Hold Allowed : </span> <span v-if="user.is_premium">10</span>
                             <span v-else-if="user.role=='Student'">5</span><span v-else>7</span></li>
                             <li><span class="text-success">Requested Books : </span> {{req_books(user.requests)}}</li>
@@ -114,12 +114,12 @@ const users_details={
             </div>
             <div v-if="!user.toggle" class="card-body">
                 <h5 class="card-title mb-0">Borrowed Book's Details</h5>
-                <p class="card-text mt-3">
-                    <ul v-if="user.books.length" class="list-group list-group-flush">
+                <p class="card-text">
                     <span class="text-danger mb-4">(Click on any book name to restrict its access)</span>
+                    <ul v-if="user.books.length" class="list-group list-group-flush">
                         <li v-for="book in user.books" class="list-group-item">
-                            <span class="btn pe-3 btn-outline-danger">Book Name : {{book.name}} </span>
-                            Genre : <span v-for="gen in book.genre">| {{gen}} |</span>
+                            <span class="btn pe-3 btn-outline-danger" @click="revoke(user.id,book.id)">Book Name : {{book.name}} </span>
+                            <span class="ps-5 text-primary"> Genre : </span><span v-for="gen in book.genre">| {{gen.name}} |</span>
                         </li>
                     </ul>
                     <ul v-else>{{user.name}} does not own any book</ul>
@@ -140,11 +140,26 @@ const users_details={
                 }
             }
             return count
+        },
+        revoke:function(u_id,b_id){
+            let query=`mutation{
+                revoke(u_id:${u_id},b_id:${b_id})
+              }`
+              const requestOptions = {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ query: query }),
+                };
+                let apiUrl="http://127.0.0.1:5000/graphql";
+              fetch(apiUrl, requestOptions).then(data=> console.log(data))
         }
     },
     mounted:function(){
         let query=`{
           user{
+              id,
               name,
               user_name,
               email,
@@ -156,6 +171,7 @@ const users_details={
                 status
               }
               books{
+                id,
                 name,
                 genre{
                     name
@@ -193,7 +209,7 @@ const users_request={
         }
     },
     template:`<div>
-    <div v-if="request.length>1" class="m-5">
+    <div v-if="request.length>0" class="m-5">
         <div v-for="req in request" v-if="req.user.role!='Admin'" class="card">
             <h5 class="card-header">Request</h5>
             <div class="card-body">
@@ -205,7 +221,9 @@ const users_request={
                             <li><span class="text-success">Username :</span> {{req.user.user_name}}</li>
                             <li><span class="text-success">Premium Membership Status :</span> {{req.user.is_premium}}</li>
                             <li><span class="text-success">Type of User :</span> {{req.user.role}}</li>
-                            <li><span class="text-success">Books read :</span> {{req.user.books_borrowed}}</li>
+                            <li><span class="text-success">Books read times :</span> {{req.user.books_borrowed}}</li>
+                            <li><span class="text-success">Books hold/allowed :</span> {{ req.user.books.length }}/ <span v-if="req.user.is_premium">10</span>
+                            <span v-else-if="req.user.role=='Student'">5</span><span v-else>7</span></li>
                         </ul>
                     </p>
                     <p class="col-4">
@@ -221,7 +239,7 @@ const users_request={
                     <p class="col-4">
                         <ul>
                             <h5>Book Access Permission</h5>
-                            <button @click="accept_req(req.user.id,req.book.id)" class="btn btn-outline-success mb-3 p-2">Accept Request</button><br>
+                            <button @click="accept_req(req.user.id,req.book.id,req.user.books.length,req.user.is_premium,req.user.role)" class="btn btn-outline-success mb-3 p-2">Accept Request</button><br>
                             <button @click="reject_req(req.user.id,req.book.id)" class="btn btn-outline-danger p-2">Reject Request </button>
                         </ul>
                     </p>
@@ -233,13 +251,24 @@ const users_request={
         <h3 class="text-center my-4">No request to display</h3>
         <ul>
         <li class="my-3">Man you are not advertising your website properly</li>
-        <li class="my-3">Go and do some work</li>
-        <li class="my-3">And make sure next time this page does not appears</li>
+        <li class="my-3">Either that or your books are so bad that users don't want to read them.</li>
         </ul>
     </div>
     </div>`,
     methods:{
-        accept_req:function(u_id,b_id){
+        accept_req:function(u_id,b_id,hold,is_premium,role){
+            let max=0
+            if(is_premium){
+                max=10
+            }else if(role=='Faculty'){
+                max=7
+            }else{
+                max=5
+            }
+            if(hold>=max){
+                alert("User has reached max limit of requesting books")
+                return
+            }
             let query=`mutation{
                 request(u_id:${u_id},b_id:${b_id},status:true)
             }`
@@ -284,7 +313,10 @@ const users_request={
                     user_name,
                     role,
                     is_premium,
-                    books_borrowed
+                    books_borrowed,
+                    books{
+                        id
+                    }
                 },
                 book{
                     id,
@@ -307,6 +339,7 @@ const users_request={
           .then(response => response.json())
           .then(data =>{
             this.request=data.data.request
+            console.log(this.request)
           })
           .catch(error => {
               console.error('GraphQL Error:', error);

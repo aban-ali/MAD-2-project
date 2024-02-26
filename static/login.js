@@ -155,6 +155,7 @@ let first_page = new Vue({
                 body: JSON.stringify({ query: query }),
                 };
             let a =await abc(requestOptions)
+            console.log(a)
             try{
                 a= a.data.user[0]
                 if (a.password==password){
@@ -206,7 +207,7 @@ let first_page = new Vue({
 })
 async function abc(requestOptions){
     let apiUrl="http://127.0.0.1:5000/graphql";
-    return fetch(apiUrl, requestOptions)
+    return await fetch(apiUrl, requestOptions)
     .then(response => response.json())
     .then(data =>{
         return data

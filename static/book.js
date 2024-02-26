@@ -110,11 +110,12 @@ template:`
 <div>
     <div class="text-center p-3" style="background-color:#FFCF81;">
         <h4>{{$root.book_name}}</h4>
+        <div id="time_end" class="text-center text-danger"></div>
         <embed v-if="read_permission" :src="url" type="application/pdf" width="80%" height="600px">
         <div class="d-grid gap-2 col-6 mx-auto">
-            <button v-if="$root.user.role!='Admin'" class="btn btn-info" @click="read_book"><span v-if="$root.err">Request Access for 1 week</span>
-            <span v-else-if="!$root.status">Request Pending</span><span v-else>Read Book</span></button>
-            <button class="btn btn-info" @click="read_permission=!read_permission">Read Book</button>
+            <button v-if="$root.user.role!='Admin' && !$root.status" class="btn btn-info" @click="read_book"><span v-if="$root.err">Request Access for 1 week</span>
+            <span v-else-if="!$root.status">Request Pending</span></button>
+            <button v-if="$root.user.role=='Admin' || $root.status" class="btn btn-info" @click="read_permission=!read_permission">Read Book</button>
         </div>
     </div>
     <p class="m-0" style="filter: blur(3px);background-color:#FFCF81;">.</p>
@@ -303,15 +304,20 @@ const book=new Vue({
               },
               body: JSON.stringify({ query: q }),
             };
-          //let apiUrl="http://127.0.0.1:5000/graphql";
-          fetch(apiUrl, req)
+          await fetch(apiUrl, req)
           .then(response => response.json())
           .then(data =>{
               this.status=data.data.request[0].status;
               this.deadline=data.data.request[0].deadline;
-          })
+            })
           .catch(error => {
               this.err=true;
           });
+          if(this.status){
+            document.getElementById("time_end").innerHTML="Your Request Time ends on : "+this.deadline
+          }else{
+            document.getElementById("time_end").innerHTML=""
+          }
+          console.log(this.err)
     }
 })

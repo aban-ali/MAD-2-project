@@ -600,7 +600,7 @@ export const books_body={
             <p class="d-inline float-end col-3">{{book.release_date}}</p>
             <p class="d-inline float-end col-5"><span class="me-0" v-for="gen in book.genre">| {{gen.name}} |</span></p>
             <div v-if="$root.role=='Admin'" class="text-start"><br><br><br>
-              User who have access to this book : <span  v-if="book.users[0]"><span v-for="user in book.users" class="btn">{{user.name}} &nbps;&nbps; ~{{user.user_name}}</span></span>
+              User who have access to this book : <span  v-if="book.users[0]"><span v-for="user in book.users" class="btn">| {{user.name}} &nbsp;&nbsp; ~{{user.user_name}} |</span></span>
               <span v-else class="text-danger">No one is currently reading this book</span>
             </div> 
           </li>

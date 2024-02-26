@@ -91,6 +91,10 @@ type_defs = """
             b_id:Int!
             status:Boolean
             ):Boolean!
+        revoke(
+            u_id:Int!
+            b_id:Int!
+        ):Boolean!
     }
 """
 book_type=ObjectType("Books")
@@ -147,13 +151,19 @@ def resolve_book(*_,name=None):
 
 @query.field("request")
 def resolve_request(*_,u_id=None,b_id=None):
-    if b_id:    
-        res=list(Request.query.filter_by(u_id=u_id,b_id=b_id).first())
-    elif u_id:
-        res=Request.query.filter_by(u_id=u_id).all()
-    else:
-        res=Request.query.filter_by(status=False).all()
-    return res
+    try:    
+        if b_id: 
+            res=Request.query.filter_by(u_id=u_id,b_id=b_id).all()
+            if res[0].deadline<date.today():
+                revoke_book_access(u_id=u_id,b_id=b_id)
+                res=[]
+        elif u_id:
+            res=Request.query.filter_by(u_id=u_id).all()
+        else:
+            res=Request.query.filter_by(status=False).all()
+        return res
+    except:
+        return []
 
 #---------------------------------ADD and EDIT------------------------------------------
 @mutation.field("genre")
@@ -213,6 +223,7 @@ def edit_book(*_,id,name=None,genre=None,description=None):
 @mutation.field("user")
 def edit_user(*_,is_premium,user_name):
     if is_premium:
+        print(user_name, is_premium)
         user=User.query.filter_by(user_name=user_name).first()
         user.is_premium=True
         db.session.commit()
@@ -225,6 +236,11 @@ def request_book(*_,u_id,b_id,status=None):
     if status:
         request.status=True
         request.deadline=date.today()+timedelta(days=7)
+        req=Urb(u_id=u_id,b_id=b_id)
+        db.session.add(req)
+        user=User.query.filter_by(id=u_id).first()
+        user.books_borrowed+=1
+        db.session.add(user)
         db.session.commit()
     else:
         if request:
@@ -285,9 +301,18 @@ def delete_user(*_,username):
         return True
     except:
         return False
-#-------------------------------------SEARCH------------------------------------------------
 
-
+@mutation.field("revoke")
+def revoke_book_access(*_,u_id,b_id):
+    try:
+        rel=Urb.query.filter_by(u_id=u_id,b_id=b_id).first()
+        req=Request.query.filter_by(u_id=u_id,b_id=b_id).first()
+        db.session.delete(req)
+        db.session.delete(rel)
+        db.session.commit()
+        return True
+    except:
+        return False
 
 #-----------------------------------###---SCHEMA SETUP---###-----------------------------------
 schema = make_executable_schema(type_defs,[query,mutation,book_type,date_scalar,review_type,user_type,request_type])
