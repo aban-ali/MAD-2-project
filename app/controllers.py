@@ -1,6 +1,7 @@
 from flask import request, render_template, redirect, url_for, send_from_directory, jsonify
 from flask import current_app as app,send_from_directory
 from datetime import date
+from sqlalchemy import and_
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, current_user
 from .database import *
 from .graphql import *
@@ -125,6 +126,43 @@ def book(book_name):
 @app.get("/image/<file>")
 def get_image(file):
     return send_from_directory('static/images',file+".jpg")
+
+#-------------------------------KINDOF API----------------------------------------------
+@app.route("/search/book/<name>", methods=["POST"])
+def search_book(name):
+    books=Book.query.filter(Book.name.ilike(f'%{name}%')).all()
+    genre=Genre.query.filter(Genre.name.ilike(f'{name}')).first()
+    genre=genre.books if genre else ""
+    print(genre)
+    res={"by_name":[],"by_genre":[]}
+    for book in books:
+        book=book.__dict__
+        res["by_name"].append({"name":book["name"],"des":book["description"],"date":book["release_date"]})
+    for book in genre:
+        book=book.__dict__
+        res["by_genre"].append({"name":book["name"],"des":book["description"],"date":book["release_date"]})    
+    print(res)
+    return jsonify(res)
+
+@app.route("/search/user/<name>", methods=["POST"])
+def search_user(name):
+    username=User.query.filter(User.user_name.ilike(f'%{name}%')).all()
+    uname=User.query.filter(User.name.ilike(f'%{name}%')).all()
+    email=User.query.filter(User.email.ilike(f'%{name}%')).all()
+    res={"by_username":[],"by_name":[],"by_email":[]}
+    for user in username:
+        count=len(user.books)
+        user=user.__dict__
+        res["by_username"].append({"name":user['name'],"username":user['user_name'],"email":user['email'],"role":user['role'],"held":user['books_borrowed'],"is_premium":user['is_premium'],"books":count})
+    for user in uname:
+        count=len(user.books)
+        user=user.__dict__
+        res["by_name"].append({"name":user['name'],"username":user['user_name'],"email":user['email'],"role":user['role'],"held":user['books_borrowed'],"is_premium":user['is_premium'],"books":count})
+    for user in email:
+        count=len(user.books)
+        user=user.__dict__
+        res["by_email"].append({"name":user['name'],"username":user['user_name'],"email":user['email'],"role":user['role'],"held":user['books_borrowed'],"is_premium":user['is_premium'],"books":count})
+    return jsonify({"result":res})
 
 #-------------------FLASK-JWT-EXTENDED CONFIGURATION-------------------------------------
 @jwt.user_identity_loader

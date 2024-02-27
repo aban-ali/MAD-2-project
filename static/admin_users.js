@@ -6,6 +6,9 @@ const taskbar={
       return{
         genres:[],
         join:false,
+        search_val:"",
+        search_res:"",
+        show_search:false
       }
     },  
     template:`
@@ -33,15 +36,128 @@ const taskbar={
                             <span class="p-2 rounded-4 text-warning border border-warning">Premium Member</span>
                         </div>
                         <div class="d-flex" role="search">
-                            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                            <button class="btn btn-outline-success" type="submit">Search</button>
+                            <input class="form-control me-2" v-model="search_val" type="search" placeholder="Search" aria-label="Search">
+                            <button @click="search" class="btn btn-outline-success" type="submit">Search</button>
                         </div>
                     </div>
                 </div>
             </nav>
         </div>
+            <div v-if="show_search">
+                <div v-if="check(search_res.by_name)">
+                    <p class="text-center text-success my-3 h3">Search Result by Name</p>
+                    <div v-for="user in search_res.by_name" class="card my-2 mx-5">
+                        <h5 class="card-header" style="background-color:#6ddd84;">{{user.role}}</h5>
+                        <div class="card-body">
+                            <h5 class="card-title text-center">Breif User Detail</h5>
+                            <div class="row mt-3 px-3">
+                                <ul class="col-6">
+                                    <li><span class="text-success">Name :</span>{{user.name}}</li>
+                                    <li><span class="text-success">Username :</span>{{user.username}}</li>
+                                    <li><span class="text-success">Role :</span>{{user.role}}</li>
+                                    <li><span class="text-success">Email :</span>{{user.email}}</li>
+                                </ul>
+                                <ul class="col-6">
+                                    <li><span class="text-success">Books read :</span>{{user.held}}</li>
+                                    <li><span class="text-success">Premium Membership Status :</span>{{user.is_premium}}</li>
+                                    <li><span class="text-success">Books Hold :</span>{{user.books}}</li>
+                                    <li><span class="text-success">Books Hold Allowed :</span>{{books_hold(user.role,user.is_premium)}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr v-if="check(search_res.by_name)" class="border border-5 border-success">
+                <div v-if="check(search_res.by_username)">
+                    <p class="text-center text-success my-3 h3">Search Result by Username</p>
+                    <div v-for="user in search_res.by_username" class="card my-2 mx-5">
+                        <h5 class="card-header" style="background-color:#6ddd84;">{{user.role}}</h5>
+                        <div class="card-body">
+                            <h5 class="card-title text-center">Breif User Detail</h5>
+                            <div class="row mt-3 px-3">
+                                <ul class="col-6">
+                                    <li><span class="text-success">Name :</span>{{user.name}}</li>
+                                    <li><span class="text-success">Username :</span>{{user.username}}</li>
+                                    <li><span class="text-success">Role :</span>{{user.role}}</li>
+                                    <li><span class="text-success">Email :</span>{{user.email}}</li>
+                                </ul>
+                                <ul class="col-6">
+                                    <li><span class="text-success">Books read :</span>{{user.held}}</li>
+                                    <li><span class="text-success">Premium Membership Status :</span>{{user.is_premium}}</li>
+                                    <li><span class="text-success">Books Hold :</span>{{user.books}}</li>
+                                    <li><span class="text-success">Books Hold Allowed :</span>{{books_hold(user.role,user.is_premium)}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr v-if="check(search_res.by_username)" class="border border-5 border-success">
+                <div v-if="check(search_res.by_email)">
+                    <p class="text-center text-success my-3 h3">Search Result by Email ID</p>
+                    <div v-for="user in search_res.by_email" class="card my-2 mx-5">
+                        <h5 class="card-header" style="background-color:#6ddd84;">{{user.role}}</h5>
+                        <div class="card-body">
+                            <h5 class="card-title text-center">Breif User Detail</h5>
+                            <div class="row mt-3 px-3">
+                                <ul class="col-6">
+                                    <li><span class="text-success">Name :</span>{{user.name}}</li>
+                                    <li><span class="text-success">Username :</span>{{user.username}}</li>
+                                    <li><span class="text-success">Role :</span>{{user.role}}</li>
+                                    <li><span class="text-success">Email :</span>{{user.email}}</li>
+                                </ul>
+                                <ul class="col-6">
+                                    <li><span class="text-success">Books read :</span>{{user.held}}</li>
+                                    <li><span class="text-success">Premium Membership Status :</span>{{user.is_premium}}</li>
+                                    <li><span class="text-success">Books Hold :</span>{{user.books}}</li>
+                                    <li><span class="text-success">Books Hold Allowed :</span>{{books_hold(user.role,user.is_premium)}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr v-if="check(search_res.by_email)" class="border border-5 border-success">
+            </div>
+        </div>
     </div>`,
     methods:{
+        books_hold:function(role,is_prem){
+            if(is_prem){
+                return 10;
+            }else if(role=='Faculty'){
+                return 7
+            }else{
+                return 5
+            }
+        },
+        check:function(val){
+            if(val.length>0){
+                return true
+            }else{
+                return false
+            }
+        },
+        search:function(){
+            if(this.search_val){
+                const requestOptions = {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    }
+                };
+                let apiUrl="http://127.0.0.1:5000/search/user/"+this.search_val;
+                fetch(apiUrl, requestOptions)
+                .then(response => response.json())
+                .then(data =>{
+                    this.search_res=data.result;
+                    this.show_search=true;
+                })
+                .catch(error => {
+                    console.error('GraphQL Error:', error);
+                });
+            }else{
+                this.show_search=false;
+            }
+        },
         logout:function(){
             const requestOptions = {
                 method: 'POST',
@@ -210,7 +326,7 @@ const users_request={
     },
     template:`<div>
     <div v-if="request.length>0" class="m-5">
-        <div v-for="req in request" v-if="req.user.role!='Admin'" class="card">
+        <div v-for="req in request" v-if="req.user.role!='Admin'" :id="req.id" class="card">
             <h5 class="card-header">Request</h5>
             <div class="card-body">
                 <h5 class="card-title">Request Details</h5>
@@ -239,8 +355,8 @@ const users_request={
                     <p class="col-4">
                         <ul>
                             <h5>Book Access Permission</h5>
-                            <button @click="accept_req(req.user.id,req.book.id,req.user.books.length,req.user.is_premium,req.user.role)" class="btn btn-outline-success mb-3 p-2">Accept Request</button><br>
-                            <button @click="reject_req(req.user.id,req.book.id)" class="btn btn-outline-danger p-2">Reject Request </button>
+                            <button @click="accept_req(req.user.id,req.book.id,req.user.books.length,req.user.is_premium,req.user.role,req.id)" class="btn btn-outline-success mb-3 p-2">Accept Request</button><br>
+                            <button @click="reject_req(req.user.id,req.book.id,req.id)" class="btn btn-outline-danger p-2">Reject Request </button>
                         </ul>
                     </p>
                 </div>
@@ -250,13 +366,13 @@ const users_request={
     <div v-else class="m-5">
         <h3 class="text-center my-4">No request to display</h3>
         <ul>
-        <li class="my-3">Man you are not advertising your website properly</li>
+        <li class="my-3">Man!!! you are not advertising your website properly</li>
         <li class="my-3">Either that or your books are so bad that users don't want to read them.</li>
         </ul>
     </div>
     </div>`,
     methods:{
-        accept_req:function(u_id,b_id,hold,is_premium,role){
+        accept_req:function(u_id,b_id,hold,is_premium,role,id){
             let max=0
             if(is_premium){
                 max=10
@@ -280,12 +396,16 @@ const users_request={
                 body: JSON.stringify({ query: query }),
               };
               let apiUrl="http://127.0.0.1:5000/graphql";
-            fetch(apiUrl, requestOptions)
+            fetch(apiUrl, requestOptions).
+            then(data=>{
+                const card=document.getElementById(id)
+                card.setAttribute("hidden",true)
+            })
             .catch(error => {
                 console.error('GraphQL Error:', error);
             });
         },
-        reject_req:function(u_id,b_id){
+        reject_req:function(u_id,b_id,id){
             let query=`mutation{
                 request(u_id:${u_id},b_id:${b_id},status:false)
             }`
@@ -297,7 +417,11 @@ const users_request={
                 body: JSON.stringify({ query: query }),
               };
               let apiUrl="http://127.0.0.1:5000/graphql";
-            fetch(apiUrl, requestOptions)
+            fetch(apiUrl, requestOptions).
+            then(data=>{
+                const card=document.getElementById(id)
+                card.setAttribute("hidden",true)
+            })
             .catch(error => {
                 console.error('GraphQL Error:', error);
             });
@@ -306,6 +430,7 @@ const users_request={
     mounted:function(){
         let query=`{
             request{
+                id,
                 status,
                 user{
                     id,

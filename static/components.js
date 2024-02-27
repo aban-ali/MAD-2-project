@@ -588,12 +588,11 @@ export const books_body={
       <br>
       <ul class="list-group m-3 list-group-horizontal-xxl">
           <li class="list-group-item rounded-2 pb-0 m-2 row">
-            <p class="d-inline float-start col-1 h5">Index</p>
+            <p class="d-inline float-start col-2 h5">Index</p>
             <p class="d-inline float-start col-3 h5">Book Name </p>
             <p class="d-inline float-end h5 col-2">Release Date</p>
             <p class="d-inline float-end h5 col-5">Genre</p>
           </li>
-          
           <li @click="go_to(book.name)" v-for="(book,index) in books" class="list-group-item btn rounded-2 pb-0 m-2 row">
             <p class="d-inline float-start col-1">{{index+1}}</p>
             <p class="d-inline ms-5 float-start col-1">{{book.name}}</p>

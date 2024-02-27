@@ -36,6 +36,7 @@ type_defs = """
         requests:[Request]
     }
     type Request{
+        id:Int
         status:Boolean
         deadline:Date
         book:Books

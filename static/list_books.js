@@ -62,6 +62,7 @@ const taskbar={
         <div v-if="genre_search">
         </div>
         <div v-if="no_search">
+            <h3 class="text-danger">Sorry!! <br> No result found</h3>
         </div>
     </div>
     <div>

@@ -31,7 +31,7 @@ const book_taskbar={
                 </div>
             </div>
         </nav>
-        <div class="popup-form" v-if="this.join">
+        <div class="popup-form" v-if="this.join" style="z-index: 5;">
             <div class="overlay" @click="this.closeForm_member"></div>
             <div class="content">
             <span class="close-btn bg-danger rounded-3" @click="this.closeForm_member">&nbsp;&times;&nbsp;</span>
@@ -41,7 +41,7 @@ const book_taskbar={
                     <li class="ms-4">Can hold upto 7 books</li>
                     <li class="ms-4">Lorem ipsum dolor sit amet</li>
                 </ul>
-                <div>So why wait!! Become a member for $1 million now!</div>
+                <div>So why wait!! Become a member for just $1 million now!</div>
                 <div class="d-grid gap-2 my-3">
                     <span @click="become_member" class="btn btn-outline-warning">Become a Member NOW</span>
                 </div>
@@ -108,8 +108,8 @@ const body={
     },
 template:`
 <div>
-    <div class="text-center p-3" style="background-color:#FFCF81;">
-        <h4>{{$root.book_name}}</h4>
+    <div class="text-center p-3" style="background-color:#D9EDBF;">
+        <h4 class="text-success">{{$root.book_name}}</h4>
         <div id="time_end" class="text-center text-danger"></div>
         <embed v-if="read_permission" :src="url" type="application/pdf" width="80%" height="600px">
         <div class="d-grid gap-2 col-6 mx-auto">
@@ -118,10 +118,9 @@ template:`
             <button v-if="$root.user.role=='Admin' || $root.status" class="btn btn-info" @click="read_permission=!read_permission">Read Book</button>
         </div>
     </div>
-    <p class="m-0" style="filter: blur(3px);background-color:#FFCF81;">.</p>
-    <p class="m-0" style="filter: blur(3px);background-color:#FDFFAB;">.</p>
-    <div class="p-2 mt-0" style="background-color:#FDFFAB">
-        <h4 class=" text-center">Book Details</h4>
+    <hr class="border border-5 m-0 py-0 px-2 border-success">
+    <div class="p-2 mt-0" style="background-color:#D9EDBF">
+        <h4 class="text-success text-center">Book Details</h4>
         <p><h5 class="d-inline">Book Description:</h5><span v-if="$root.book.description" class="ps-2">{{$root.book.description}}</span>
             <span v-else class="ps-2">No Description of book is present</span>
         </p>
@@ -131,19 +130,18 @@ template:`
             <span v-else> Unknown </span>
         </p>    
     </div>
-    <p class="m-0" style="filter: blur(3px);background-color:#FDFFAB;">.</p>
-    <p class="m-0" style="filter: blur(3px);background-color:#D9EDBF;">.</p>
+    <hr class="border border-5 m-0 py-0 px-2 border-success">
     <div class="p-2" style="background-color:#D9EDBF">
-        <h4 class="text-center"> Please drop Your Review</h4>
+        <h4 class="text-center text-success"> Please drop Your Review</h4>
         <div class="input-group" style="width:80%; margin:auto;">
             <span class="input-group-text">Review</span>
             <textarea class="form-control" id="review"></textarea>
             <button @click="submit_review" class="btn btn-outline-secondary">Submit</button>
         </div>
     </div>
-    <hr class="border border-5 m-0 py-0 px-2 border-secondary">
+    <hr class="border border-5 m-0 py-0 px-2 border-success">
     <div class="py-3" style="background-color:#D9EDBF">
-    <div v-for="rev in $root.reviews" class="my-0 p-2 mx-3 border rounded-3 border-info"  style="background-color:#cde9a7">
+    <div v-for="rev in $root.reviews" v-if="rev.review" class="my-1 p-2 mx-3 border rounded-3 border-info"  style="background-color:#cde9a7">
         <p class="px-1 text-success">Review by: {{ rev.user.name }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         &nbsp;Username ~{{rev.user.user_name}}</p>
         <p class="px-4 text-center">{{rev.review}}</p>
@@ -173,10 +171,6 @@ methods:{
             };
           let apiUrl="http://127.0.0.1:5000/graphql";
           fetch(apiUrl, requestOption)
-          .then(response => response.json())
-          .then(data =>{
-              console.log(data)
-          })
           .catch(error => {
               console.error('GraphQL Error:', error);
           });
