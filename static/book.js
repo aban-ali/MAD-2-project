@@ -312,6 +312,5 @@ const book=new Vue({
           }else{
             document.getElementById("time_end").innerHTML=""
           }
-          console.log(this.err)
     }
 })

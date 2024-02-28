@@ -239,9 +239,12 @@ def request_book(*_,u_id,b_id,status=None):
         request.deadline=date.today()+timedelta(days=7)
         req=Urb(u_id=u_id,b_id=b_id)
         db.session.add(req)
+        book=Book.query.filter_by(id=b_id).first()
+        book.borrow_count+=1
+        book.hold_count+=1
         user=User.query.filter_by(id=u_id).first()
         user.books_borrowed+=1
-        db.session.add(user)
+        #db.session.add(user)
         db.session.commit()
     else:
         if request:
@@ -308,6 +311,7 @@ def revoke_book_access(*_,u_id,b_id):
     try:
         rel=Urb.query.filter_by(u_id=u_id,b_id=b_id).first()
         req=Request.query.filter_by(u_id=u_id,b_id=b_id).first()
+        Book.query.filter_by(id=b_id).first().hold_count-=1
         db.session.delete(req)
         db.session.delete(rel)
         db.session.commit()

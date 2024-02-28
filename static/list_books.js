@@ -3,6 +3,7 @@ const taskbar={
     data(){
         return{
             is_searched:false,
+            search_val:"",
             name_search:false,
             genre_search:false,
             show_table:false,
@@ -34,7 +35,7 @@ const taskbar={
                 </div>
 
                 <div class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search">
+                    <input v-model="search_val" class="form-control me-2" type="search" placeholder="Search">
                     <button @click="search" class="btn btn-outline-success" type="submit">Search</button>
                 </div>
             </div>
@@ -57,12 +58,44 @@ const taskbar={
         </div>
     </div>
     <div v-if="is_searched">
-        <div v-if="name_search">
+        <div v-if="name_search[0]" class="m-3 row">
+            <h3 class="text-success text-center">Searched Books</h3>
+            <div v-for="book in name_search" class="card border-success m-2 p-0 col-4" style="max-width: 18rem;">
+                <div class="card-header" style="background-color:#6ddd84;">Book</div>
+                <div @click="go_to_book(book.name)" class="card-body btn text-success p-1">
+                <h5 class="card-title">{{book.name}}</h5>
+                <p class="card-text">
+                    <ul>
+                        Description : <span class="text-dark"> {{book.des}}</span>
+                    </ul>
+                    <ul>
+                        Release Date : <span class="text-dark"> {{book.date.substring(0,17)}}</span>
+                    </ul>
+                </p>
+                </div>
+            </div>
+            <hr class="border boder-5 border-success">
         </div>
-        <div v-if="genre_search">
+        <div v-if="genre_search[0]" class="m-3 row">
+            <h3 class="text-success text-center">Searched Genre</h3>
+            <div v-for="book in genre_search" class="card border-success m-2 p-0 col-4" style="max-width: 18rem;">
+                <div class="card-header" style="background-color:#6ddd84;">Book</div>
+                <div @click="go_to_book(book.name)" class="card-body btn text-success p-1">
+                <h5 class="card-title">{{book.name}}</h5>
+                <p class="card-text">
+                    <ul>
+                        Description : <span class="text-dark"> {{book.des}}</span>
+                    </ul>
+                    <ul>
+                        Release Date : <span class="text-dark"> {{book.date.substring(0,17)}}</span>
+                    </ul>
+                </p>
+                </div>
+            </div>
+            <hr class="border boder-5 border-success">
         </div>
         <div v-if="no_search">
-            <h3 class="text-danger">Sorry!! <br> No result found</h3>
+            <h3 class="text-danger text-center">Sorry!! <br> No result found</h3>
         </div>
     </div>
     <div>
@@ -87,7 +120,7 @@ const taskbar={
 </div>`,
 computed:{
     no_search:function(){
-        if(!this.name_search && !this.genre_search){
+        if(!this.name_search[0] && !this.genre_search[0]){
             return true;
         }else{
             return false;
@@ -107,6 +140,10 @@ methods:{
     },
     closeForm_member:function(){
         this.join=false
+    },
+    go_to_book:function(name){
+        let url='/book/'+name;
+        window.location.href=url
     },
     become_member:function(){
         let query=`mutation{
@@ -142,7 +179,27 @@ methods:{
         }).catch(err=> console.log(err));
     },
     search:function(){
-        
+        if(this.search_val){
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+            };
+            let apiUrl="http://127.0.0.1:5000/search/book/"+this.search_val;
+            fetch(apiUrl, requestOptions)
+            .then(response => response.json())
+            .then(data =>{
+                this.name_search=data.by_name;
+                this.genre_search=data.by_genre;
+                this.is_searched=true;
+            })
+            .catch(error => {
+                console.error('GraphQL Error:', error);
+            });
+        }else{
+            this.is_searched=false;
+        }
     }
     }
 }

@@ -8,6 +8,10 @@ const taskbar={
       return{
         genres:[],
         join:false,
+        is_searched:false,
+        search_val:"",
+        name_search:false,
+        genre_search:false,
       }
     },  
     template:`
@@ -17,7 +21,6 @@ const taskbar={
         <div class="container-fluid">
           <button data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample" class="navbar-brand btn" style="font-family: 'Brush Script MT', cursive;">
           Mistborn</button>
-          
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item">
@@ -39,8 +42,8 @@ const taskbar={
                 </span>
             </div>
             <div class="d-flex" role="search">
-              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-              <button class="btn btn-outline-success" type="submit">Search</button>
+                <input v-model="search_val" class="form-control me-2" type="search" placeholder="Search">
+                <button @click="search" class="btn btn-outline-success" type="submit">Search</button>
             </div>
           </div>
         </div>
@@ -61,6 +64,49 @@ const taskbar={
                 </div>
             </div>
         </div>
+
+        <div v-if="is_searched" class="my-3 bg-light">
+            <div v-if="name_search[0]" class="m-3 row">
+                <h3 class="text-success text-center">Searched Books</h3>
+                <div v-for="book in name_search" class="card border-success m-2 p-0 col-4" style="max-width: 18rem;">
+                    <div class="card-header" style="background-color:#6ddd84;">Book</div>
+                    <div @click="go_to_book(book.name)" class="card-body btn text-success p-1">
+                    <h5 class="card-title">{{book.name}}</h5>
+                    <p class="card-text">
+                        <ul>
+                            Description : <span class="text-dark"> {{book.des}}</span>
+                        </ul>
+                        <ul>
+                            Release Date : <span class="text-dark"> {{book.date.substring(0,17)}}</span>
+                        </ul>
+                    </p>
+                    </div>
+                </div>
+                <hr class="border boder-5 border-success">
+            </div>
+            <div v-if="genre_search[0]" class="m-3 row">
+                <h3 class="text-success text-center">Searched Genre</h3>
+                <div v-for="book in genre_search" class="card border-success m-2 p-0 col-4" style="max-width: 18rem;">
+                    <div class="card-header" style="background-color:#6ddd84;">Book</div>
+                    <div @click="go_to_book(book.name)" class="card-body btn text-success p-1">
+                    <h5 class="card-title">{{book.name}}</h5>
+                    <p class="card-text">
+                        <ul>
+                            Description : <span class="text-dark"> {{book.des}}</span>
+                        </ul>
+                        <ul>
+                            Release Date : <span class="text-dark"> {{book.date.substring(0,17)}}</span>
+                        </ul>
+                    </p>
+                    </div>
+                </div>
+                <hr class="border boder-5 border-success">
+            </div>
+            <div v-if="no_search">
+                <h3 class="text-danger text-center">Sorry!! <br> No result found</h3>
+            </div>
+        </div>
+
         <div class="offcanvas offcanvas-start rounded-5" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
           <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="offcanvasExampleLabel" style="font-family: 'Brush Script MT', cursive; margin:auto;">MISTBORN</h5>
@@ -93,6 +139,15 @@ const taskbar={
       </div>
         </div>
     </div>`,
+    computed:{
+      no_search:function(){
+          if(!this.name_search[0] && !this.genre_search[0]){
+              return true;
+          }else{
+              return false;
+          }
+      }
+    },
     methods:{
         logout:function(){
             const requestOptions = {
@@ -112,6 +167,10 @@ const taskbar={
         closeForm_member:function(){
             this.join=false
         },
+        go_to_book:function(name){
+          let url='/book/'+name;
+          window.location.href=url
+        },
         become_member:function(){
             let query=`mutation{
                 user(user_name:"${user_dashboard.username}",is_premium:true)
@@ -127,6 +186,29 @@ const taskbar={
             fetch('http://127.0.0.1:5000/graphql',requestOption).then(res=>{user_dashboard.is_premium=true; this.closeForm_member()})
             .catch(err=>console.log("Graphql Error : ",err))
         },
+        search:function(){
+          if(this.search_val){
+              const requestOptions = {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  }
+              };
+              let apiUrl="http://127.0.0.1:5000/search/book/"+this.search_val;
+              fetch(apiUrl, requestOptions)
+              .then(response => response.json())
+              .then(data =>{
+                  this.name_search=data.by_name;
+                  this.genre_search=data.by_genre;
+                  this.is_searched=true;
+              })
+              .catch(error => {
+                  console.error('GraphQL Error:', error);
+              });
+          }else{
+              this.is_searched=false;
+          }
+        }
     },
     mounted:function(){
       let query=`{
@@ -437,37 +519,50 @@ const books_dashboard={
 const my_books={
     data(){
         return{
-            
+            data:[]
         }
     },
     template:`
     <div class="m-5">
-        <div class="card my-3">
-            <h5 class="card-header">Featured</h5>
-            <div class="card-body">
-            <h5 class="card-title">Special title treatment</h5>
-            <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-            <a href="#" class="btn btn-primary">Go somewhere</a>
+    <h2 class="text-center text-success"> My Books</h2>
+        <div v-for="req in data" v-if="req.status" class="card my-3">
+            <h5 class="card-header"><span class="text-danger">Deadline : </span>{{req.deadline}}</h5>
+            <div @click="go_to_book(req.book.name)" class="card-body btn">
+            <h5 class="card-title text-primary">{{req.book.name}}</h5>
+            <p class="card-text mx-2 row">
+              <ul class="col-6">
+                <li><span class="text-success">Release Date : </span>{{req.book.release_date}}</li>
+                <li><span class="text-success">Description : </span>{{req.book.description}}</li>
+              </ul>
+              <ul class="col-6">
+                <li><span class="text-success">Borrow count : </span>{{req.book.borrow_count}}</li>
+                <li><span class="text-success">Genre : </span><span v-for="gen in req.book.genre">| {{gen.name}} |</span></li>
+              </ul>
+            </p>
             </div>
         </div>
     </div>`,
+    methods:{
+      go_to_book:function(name){
+        let url='/book/'+name;
+        window.location.href=url
+      }
+    },
     mounted:function(){
         let query=`{
             user(user_name:"${user_dashboard.username}"){
-                id,
-                role,
-                books{
-                    id,
+                requests{
+                  deadline,
+                  status,
+                  book{
                     name,
                     description,
                     release_date,
                     borrow_count,
-                    hold_count,
                     genre{
                         name
                     }
-
-                }
+                }}
             }
           }`
           const requestOption = {
@@ -479,7 +574,7 @@ const my_books={
             };
         fetch('http://127.0.0.1:5000/graphql',requestOption).then(res=>res.json())
         .then(data=>{
-            console.log("Answer",data.data)
+            this.data=data.data.user[0].requests
         }).catch(err=>console.log("Graphql Error : ",err))
     }
 }
